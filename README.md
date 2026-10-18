@@ -2,7 +2,8 @@
 
 Ben Sandberg's 2008 Sandberg Creative business card, as a web page. The page opens on
 the green cover; a click turns it over to the name side. The cover's border is a loop of
-skills that streams in and out at a seam on the left edge.
+skills, in a new order on every visit, that streams in and out at a seam in the middle of the
+bottom edge, under a badge naming the commit the page was deployed from.
 
 - `web/`: the site, plain HTML, CSS and one script. No build step.
 - `site/`: the [flarepress](https://github.com/pdxfixit/flarepress) site folder
@@ -20,8 +21,8 @@ Impact and Times, with similar fallbacks.
 ## Edit the skills
 
 The list is the text inside `<textPath id="skills">` in `web/index.html`: terms separated by
-` * `. `web/card.js` repeats it as needed and moves it around the border; nothing else needs
-to change.
+` * `. `web/card.js` shuffles it, repeats it as needed and moves it around the border; nothing
+else needs to change.
 
 ## Preview
 

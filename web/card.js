@@ -30,9 +30,39 @@ document.addEventListener("DOMContentLoaded", function () {
   // motion) the border holds the list's first lap, still.
   var path = document.getElementById("loop");
   var textPath = document.getElementById("skills");
-  var list = textPath.textContent.replace(/\s+/g, " ").trim() + " ";
-  document.getElementById("cover-skills").textContent = "Skills: " +
-    list.replace(/^\* /, "").replace(/ \* /g, ", ").replace(/[ *]+$/, "") + ".";
+  var terms = textPath.textContent.split("*").map(function (t) {
+    return t.replace(/\s+/g, " ").trim();
+  }).filter(Boolean);
+  document.getElementById("cover-skills").textContent = "Skills: " + terms.join(", ") + ".";
+  // A new order on every visit (Fisher-Yates).
+  for (var i = terms.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var swap = terms[i];
+    terms[i] = terms[j];
+    terms[j] = swap;
+  }
+  var list = "* " + terms.join(" * ") + " ";
+  textPath.textContent = list;
+
+  // The badge at the seam names the deployed commit. Without a stamp (a local preview)
+  // or with one that is not a commit id, it stays hidden: no badge beats a wrong one.
+  fetch("version.json", { cache: "no-store" })
+    .then(function (response) { return response.ok ? response.json() : null; })
+    .then(function (stamp) {
+      var commit = stamp && typeof stamp.commit === "string" ? stamp.commit : "";
+      if (!/^[0-9a-f]{7,40}$/.test(commit)) return;
+      var badge = document.getElementById("build");
+      var label = badge.querySelector("text");
+      var pill = badge.querySelector("rect");
+      label.textContent = commit.slice(0, 7);
+      var width = label.getComputedTextLength() + 22;
+      pill.setAttribute("x", (544 - width / 2).toFixed(1));
+      pill.setAttribute("width", width.toFixed(1));
+      badge.setAttribute("href", "https://github.com/pdxfixit/sandbergcreative/commit/" + commit);
+      badge.setAttribute("visibility", "visible");
+    })
+    .catch(function () {});
+
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   // The wave in the title. On the card SANDBERG's bottoms and CREATIVE's tops follow one
