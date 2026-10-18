@@ -56,6 +56,15 @@ document.addEventListener("DOMContentLoaded", function () {
     path.setAttribute("d", ["M" + (cx + SEAM), B, "H" + (R - r), arc + R, B - r, "V" + (T + r),
       arc + (R - r), T, "H" + (L + r), arc + L, T + r, "V" + (B - r), arc + (L + r), B,
       "H" + (cx - SEAM)].map(function (v) { return typeof v === "number" ? v.toFixed(1) : v; }).join(" "));
+    // The seam's fade, from the edge of the badge out FADE units on each side.
+    var FADE = 90, band = B - 30;
+    function attrs(id, a) { var el = document.getElementById(id); for (var k in a) el.setAttribute(k, a[k].toFixed ? a[k].toFixed(1) : a[k]); }
+    attrs("fade-all", { width: W, height: H });
+    attrs("fade-left", { x: cx - SEAM - FADE, y: band, width: FADE, height: H - band });
+    attrs("fade-gap", { x: cx - SEAM, y: band, width: 2 * SEAM, height: H - band });
+    attrs("fade-right", { x: cx + SEAM, y: band, width: FADE, height: H - band });
+    attrs("fade-out", { x1: cx - SEAM - FADE, x2: cx - SEAM });
+    attrs("fade-in", { x1: cx + SEAM, x2: cx + SEAM + FADE });
     document.getElementById("build").setAttribute("transform",
       "translate(" + (cx - 544).toFixed(1) + " " + (B - 559).toFixed(1) + ")");
     // The title spans 216-871 x 132-505 on the card; keep ~125 units clear of each edge.
@@ -74,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // goes once around and back out at the seam. Without the script (or with reduced
   // motion) the border holds the list's first lap, still.
   var textPath = document.getElementById("skills");
-  var terms = textPath.textContent.split("*").map(function (t) {
+  var terms = textPath.textContent.split("·").map(function (t) {
     return t.replace(/\s+/g, " ").trim();
   }).filter(Boolean);
   document.getElementById("cover-skills").textContent = "Skills: " + terms.join(", ") + ".";
@@ -85,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     terms[i] = terms[j];
     terms[j] = swap;
   }
-  var list = "* " + terms.join(" * ") + " ";
+  var list = "· " + terms.join(" · ") + " ";
   textPath.textContent = list;
 
   // The badge at the seam names the deployed commit. Without a stamp (a local preview)
