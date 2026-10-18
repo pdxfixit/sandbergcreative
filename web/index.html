@@ -25,12 +25,8 @@
         <title id="cover-title">Sandberg Creative</title>
         <desc id="cover-skills">Skills: the terms that run around the border.</desc>
         <rect width="1088" height="638" fill="#779152"/>
-        <!-- The title, one traced drawing cut into its two lines, so card.js can float
-             each toward the pointer by its own amount. The lines only slide, never turn. -->
-        <clipPath id="line1-clip" clipPathUnits="userSpaceOnUse"><rect width="1088" height="315"/></clipPath>
-        <clipPath id="line2-clip" clipPathUnits="userSpaceOnUse"><rect y="315" width="1088" height="323"/></clipPath>
-        <g id="line1"><use href="title.svg#lettering" width="1088" height="638" fill="#c2e296" clip-path="url(#line1-clip)"/></g>
-        <g id="line2"><use href="title.svg#lettering" width="1088" height="638" fill="#c2e296" clip-path="url(#line2-clip)"/></g>
+        <!-- The title, one traced drawing. card.js cuts it into its letters to move the wave. -->
+        <g id="title"><use href="title.svg#lettering" width="1088" height="638" fill="#c2e296"/></g>
         <!-- The skills run once around the card on this path: along the bottom, up the
              right, back along the top and down the left, on the 2008 card's baselines.
              It starts and ends at the seam, mid left edge, where card.js streams the

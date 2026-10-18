@@ -35,32 +35,77 @@ document.addEventListener("DOMContentLoaded", function () {
     list.replace(/^\* /, "").replace(/ \* /g, ", ").replace(/[ *]+$/, "") + ".";
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-  // The title floats toward the pointer, each line by its own amount (CREATIVE nearer,
-  // so it moves more), and eases back to rest when the pointer leaves the page.
-  var lines = [
-    { el: document.getElementById("line1"), dx: 10, dy: 6, x: 0, y: 0 },
-    { el: document.getElementById("line2"), dx: 18, dy: 10, x: 0, y: 0 }
+  // The wave in the title. On the card SANDBERG's bottoms and CREATIVE's tops follow one
+  // curve, about 95 units apart all the way across: the letters are tallest at the left of
+  // SANDBERG and shortest near its R. Here that curve's crest follows the pointer. Each
+  // letter stretches or shrinks with its outer edge pinned (SANDBERG's tops, CREATIVE's
+  // bottoms), and both words take the same shift, so the gap between them keeps its shape.
+  // At rest, or with the pointer off the page, the title is exactly the card.
+  //
+  // Each letter as measured on art/cover.jpg: its column (x0-x1) and its top and bottom.
+  var LETTERS = [
+    // SANDBERG: the bottom edge moves.
+    [200, 277, 137, 273, "bottom"], [277, 377, 142, 278, "bottom"], [377, 466, 141, 277, "bottom"],
+    [466, 551, 140, 272, "bottom"], [551, 641, 139, 266, "bottom"], [641, 719, 136, 258, "bottom"],
+    [719, 801, 137, 256, "bottom"], [801, 885, 132, 264, "bottom"],
+    // CREATIVE: the top edge moves.
+    [200, 291, 365, 505, "top"], [291, 385, 375, 505, "top"], [385, 468, 371, 505, "top"],
+    [468, 571, 364, 503, "top"], [571, 648, 355, 498, "top"], [648, 700, 353, 496, "top"],
+    [700, 800, 352, 495, "top"], [800, 885, 354, 500, "top"]
   ];
-  var aim = { x: 0, y: 0 };
+  var WAVE = { amplitude: 11, length: 860, rest: 330 }; // fitted to the card's curve, crest at x 330
+  function wave(x, crest) {
+    return WAVE.amplitude * Math.cos(2 * Math.PI * (x - crest) / WAVE.length);
+  }
+
+  var svgNS = "http://www.w3.org/2000/svg";
+  var title = document.getElementById("title");
+  var lettering = title.querySelector("use");
+  var defs = document.createElementNS(svgNS, "defs");
+  title.appendChild(defs);
+  var letters = LETTERS.map(function (l, i) {
+    var clip = document.createElementNS(svgNS, "clipPath");
+    clip.id = "letter-" + i;
+    clip.setAttribute("clipPathUnits", "userSpaceOnUse");
+    var rect = document.createElementNS(svgNS, "rect");
+    rect.setAttribute("x", l[0]);
+    rect.setAttribute("width", l[1] - l[0]);
+    rect.setAttribute("y", l[4] === "bottom" ? 0 : 315);
+    rect.setAttribute("height", l[4] === "bottom" ? 315 : 323);
+    clip.appendChild(rect);
+    defs.appendChild(clip);
+    var g = document.createElementNS(svgNS, "g");
+    var use = lettering.cloneNode();
+    use.setAttribute("clip-path", "url(#letter-" + i + ")");
+    g.appendChild(use);
+    title.appendChild(g);
+    return { g: g, center: (l[0] + l[1]) / 2, top: l[2], bottom: l[3], moves: l[4] };
+  });
+  lettering.remove();
+
+  var crest = WAVE.rest;
+  var aim = WAVE.rest;
   window.addEventListener("pointermove", function (event) {
     var box = card.getBoundingClientRect();
-    // -1..1 across the card, held at the edges so a far pointer is not a bigger push.
-    aim.x = Math.max(-1, Math.min(1, (event.clientX - box.left) / box.width * 2 - 1));
-    aim.y = Math.max(-1, Math.min(1, (event.clientY - box.top) / box.height * 2 - 1));
+    aim = (event.clientX - box.left) / box.width * 1088;
   });
-  document.documentElement.addEventListener("pointerleave", function () {
-    aim.x = 0;
-    aim.y = 0;
-  });
-  function float() {
-    lines.forEach(function (line) {
-      line.x += (aim.x * line.dx - line.x) * 0.08;
-      line.y += (aim.y * line.dy - line.y) * 0.08;
-      line.el.setAttribute("transform", "translate(" + line.x.toFixed(2) + " " + line.y.toFixed(2) + ")");
-    });
-    requestAnimationFrame(float);
+  document.documentElement.addEventListener("pointerleave", function () { aim = WAVE.rest; });
+  function ripple() {
+    if (Math.abs(aim - crest) > 0.05) {
+      crest += (aim - crest) * 0.08;
+      letters.forEach(function (l) {
+        var shift = wave(l.center, crest) - wave(l.center, WAVE.rest);
+        var height = l.bottom - l.top;
+        // SANDBERG's bottoms move down as the crest passes; CREATIVE's tops move with them.
+        var scale = l.moves === "bottom" ? (height + shift) / height : (height - shift) / height;
+        var pin = l.moves === "bottom" ? l.top : l.bottom;
+        l.g.setAttribute("transform",
+          "matrix(1 0 0 " + scale.toFixed(4) + " 0 " + (pin * (1 - scale)).toFixed(2) + ")");
+      });
+    }
+    requestAnimationFrame(ripple);
   }
-  requestAnimationFrame(float);
+  requestAnimationFrame(ripple);
 
   var SPEED = 36; // card units (1/1088 of its width) per second
   var lap = path.getTotalLength();
