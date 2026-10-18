@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // their printed size, scaled down only when a narrow screen leaves too little room.
   var svgNS = "http://www.w3.org/2000/svg";
   var MARGIN = 79, CORNER = 24, SEAM = 44;
+  var MAX_UNIT = 0.75; // CSS px per card unit, at most
   var path = document.getElementById("loop");
   var title = document.getElementById("title");
   var size = { w: 1088, h: 638 };
@@ -39,7 +40,9 @@ document.addEventListener("DOMContentLoaded", function () {
   function layout() {
     var vw = card.clientWidth, vh = card.clientHeight;
     if (!(vw > 0 && vh > 0)) return;
-    var unit = vw >= vh ? Math.min(vw / 1088, vh / 638) : Math.min(vw / 638, vh / 1088);
+    // Capped, so text keeps one on-screen size: a big monitor gets more card around the
+    // same-size words, not bigger words. At the cap the skills are ~12px, the title ~490px wide.
+    var unit = Math.min(MAX_UNIT, vw >= vh ? Math.min(vw / 1088, vh / 638) : Math.min(vw / 638, vh / 1088));
     var W = vw / unit, H = vh / unit;
     size = { w: W, h: H };
     ["cover", "front"].forEach(function (side) {
