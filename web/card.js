@@ -35,6 +35,33 @@ document.addEventListener("DOMContentLoaded", function () {
     list.replace(/^\* /, "").replace(/ \* /g, ", ").replace(/[ *]+$/, "") + ".";
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+  // The title floats toward the pointer, each line by its own amount (CREATIVE nearer,
+  // so it moves more), and eases back to rest when the pointer leaves the page.
+  var lines = [
+    { el: document.getElementById("line1"), dx: 10, dy: 6, x: 0, y: 0 },
+    { el: document.getElementById("line2"), dx: 18, dy: 10, x: 0, y: 0 }
+  ];
+  var aim = { x: 0, y: 0 };
+  window.addEventListener("pointermove", function (event) {
+    var box = card.getBoundingClientRect();
+    // -1..1 across the card, held at the edges so a far pointer is not a bigger push.
+    aim.x = Math.max(-1, Math.min(1, (event.clientX - box.left) / box.width * 2 - 1));
+    aim.y = Math.max(-1, Math.min(1, (event.clientY - box.top) / box.height * 2 - 1));
+  });
+  document.documentElement.addEventListener("pointerleave", function () {
+    aim.x = 0;
+    aim.y = 0;
+  });
+  function float() {
+    lines.forEach(function (line) {
+      line.x += (aim.x * line.dx - line.x) * 0.08;
+      line.y += (aim.y * line.dy - line.y) * 0.08;
+      line.el.setAttribute("transform", "translate(" + line.x.toFixed(2) + " " + line.y.toFixed(2) + ")");
+    });
+    requestAnimationFrame(float);
+  }
+  requestAnimationFrame(float);
+
   var SPEED = 36; // card units (1/1088 of its width) per second
   var lap = path.getTotalLength();
   var hovering = false;
