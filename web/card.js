@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
       arc + (R - r), T, "H" + (L + r), arc + L, T + r, "V" + (B - r), arc + (L + r), B,
       "H" + (cx - SEAM)].map(function (v) { return typeof v === "number" ? v.toFixed(1) : v; }).join(" "));
     // The seam's fade, from the edge of the badge out FADE units on each side.
-    var FADE = 90, band = B - 30;
+    var FADE = 40, band = B - 30;
     function attrs(id, a) { var el = document.getElementById(id); for (var k in a) el.setAttribute(k, a[k].toFixed ? a[k].toFixed(1) : a[k]); }
     attrs("fade-all", { width: W, height: H });
     attrs("fade-left", { x: cx - SEAM - FADE, y: band, width: FADE, height: H - band });
