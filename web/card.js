@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var cover = card.querySelector(".cover");
   var front = card.querySelector(".front");
 
-  // Turning over: a click on the card (not on a link) or the Flip button.
+  // Turning over: a click or tap anywhere (not on a link), or the keyboard-only Flip button.
   function show(flipped) {
     card.classList.toggle("flipped", flipped);
     // The side facing away is out of reach for the keyboard and screen readers.
@@ -25,10 +25,51 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   show(false);
 
+  // The card fills the window at whatever shape the window is. One card unit is sized so
+  // the printed card (1088 x 638, or 638 x 1088 on a tall screen) just fits; the drawing
+  // then widens or deepens to the window's shape. The skills loop runs along its edges at
+  // the printed card's 79-unit margin, and the title and the name side stay centred at
+  // their printed size, scaled down only when a narrow screen leaves too little room.
+  var svgNS = "http://www.w3.org/2000/svg";
+  var MARGIN = 79, CORNER = 24, SEAM = 44;
+  var path = document.getElementById("loop");
+  var title = document.getElementById("title");
+  var size = { w: 1088, h: 638 };
+  var onLayout = [];
+  function layout() {
+    var vw = card.clientWidth, vh = card.clientHeight;
+    if (!(vw > 0 && vh > 0)) return;
+    var unit = vw >= vh ? Math.min(vw / 1088, vh / 638) : Math.min(vw / 638, vh / 1088);
+    var W = vw / unit, H = vh / unit;
+    size = { w: W, h: H };
+    ["cover", "front"].forEach(function (side) {
+      document.getElementById(side + "-svg").setAttribute("viewBox", "0 0 " + W.toFixed(1) + " " + H.toFixed(1));
+      var bg = document.getElementById(side + "-bg");
+      bg.setAttribute("width", W.toFixed(1));
+      bg.setAttribute("height", H.toFixed(1));
+    });
+    var L = MARGIN, T = MARGIN, R = W - MARGIN, B = H - MARGIN, r = CORNER, cx = W / 2;
+    var arc = " A" + r + " " + r + " 0 0 0 ";
+    path.setAttribute("d", ["M" + (cx + SEAM), B, "H" + (R - r), arc + R, B - r, "V" + (T + r),
+      arc + (R - r), T, "H" + (L + r), arc + L, T + r, "V" + (B - r), arc + (L + r), B,
+      "H" + (cx - SEAM)].map(function (v) { return typeof v === "number" ? v.toFixed(1) : v; }).join(" "));
+    document.getElementById("build").setAttribute("transform",
+      "translate(" + (cx - 544).toFixed(1) + " " + (B - 559).toFixed(1) + ")");
+    // The title spans 216-871 x 132-505 on the card; keep ~125 units clear of each edge.
+    var k = Math.min(1, (W - 250) / 670, (H - 250) / 380);
+    title.setAttribute("transform", "translate(" + cx.toFixed(1) + " " + (H / 2).toFixed(1) +
+      ") scale(" + k.toFixed(4) + ") translate(-544 -319)");
+    var f = Math.min(1, (W - 160) / 500, (H - 120) / 440);
+    document.getElementById("front-text").setAttribute("transform", "translate(" + cx.toFixed(1) +
+      " " + (H / 2).toFixed(1) + ") scale(" + f.toFixed(4) + ") translate(-544 -319)");
+    onLayout.forEach(function (fn) { fn(); });
+  }
+  layout();
+  window.addEventListener("resize", layout);
+
   // The loop: the list is far longer than the border, so it streams in at the seam,
   // goes once around and back out at the seam. Without the script (or with reduced
   // motion) the border holds the list's first lap, still.
-  var path = document.getElementById("loop");
   var textPath = document.getElementById("skills");
   var terms = textPath.textContent.split("*").map(function (t) {
     return t.replace(/\s+/g, " ").trim();
@@ -88,8 +129,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return WAVE.amplitude * Math.cos(2 * Math.PI * (x - crest) / WAVE.length);
   }
 
-  var svgNS = "http://www.w3.org/2000/svg";
-  var title = document.getElementById("title");
   var lettering = title.querySelector("use");
   var defs = document.createElementNS(svgNS, "defs");
   title.appendChild(defs);
@@ -115,11 +154,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
   var crest = WAVE.rest;
   var aim = WAVE.rest;
+  var coverSvg = document.getElementById("cover-svg");
+  var hovering = false;
+  function toLocal(el, event) {
+    var m = el.getScreenCTM();
+    if (!m) return null;
+    var pt = coverSvg.createSVGPoint();
+    pt.x = event.clientX;
+    pt.y = event.clientY;
+    return pt.matrixTransform(m.inverse());
+  }
   window.addEventListener("pointermove", function (event) {
-    var box = card.getBoundingClientRect();
-    aim = (event.clientX - box.left) / box.width * 1088;
+    var t = toLocal(title, event);
+    if (t) aim = t.x;
+    // Hold the skills still while the pointer is over the band they run in, to read them.
+    var c = toLocal(coverSvg, event);
+    hovering = !!c && Math.min(c.x, size.w - c.x, c.y, size.h - c.y) < MARGIN + 40;
   });
-  document.documentElement.addEventListener("pointerleave", function () { aim = WAVE.rest; });
+  document.documentElement.addEventListener("pointerleave", function () {
+    aim = WAVE.rest;
+    hovering = false;
+  });
   function ripple() {
     if (Math.abs(aim - crest) > 0.05) {
       crest += (aim - crest) * 0.08;
@@ -137,11 +192,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   requestAnimationFrame(ripple);
 
-  var SPEED = 36; // card units (1/1088 of its width) per second
-  var lap = path.getTotalLength();
-  var hovering = false;
-  cover.addEventListener("mouseenter", function () { hovering = true; });
-  cover.addEventListener("mouseleave", function () { hovering = false; });
+  var SPEED = 36; // card units per second
 
   (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
     // One copy's length, measured off the path, where nothing is clipped.
@@ -154,8 +205,17 @@ document.addEventListener("DOMContentLoaded", function () {
     probe.remove();
     if (!(length > 0)) return; // a failed measure must not look like a real one
 
-    // Enough copies that the border is always full as the text slides back.
-    textPath.textContent = new Array(Math.ceil(lap / length) + 2).join(list);
+    // Enough copies that the border is always full as the text slides back, refilled
+    // when a resize makes the border longer.
+    var copies = 0;
+    function fill() {
+      var need = Math.ceil(path.getTotalLength() / length) + 2;
+      if (need <= copies) return;
+      copies = need;
+      textPath.textContent = new Array(copies).join(list);
+    }
+    fill();
+    onLayout.push(fill);
     textPath.setAttribute("aria-hidden", "true");
 
     var offset = 0;

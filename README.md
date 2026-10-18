@@ -1,7 +1,7 @@
 # sandbergcreative.net
 
 Ben Sandberg's 2008 Sandberg Creative business card, as a web page. The page opens on
-the green cover; a click turns it over to the name side. The cover's border is a loop of
+the green cover and fills the window at any shape; a click or tap turns it over to the name side. The cover's border is a loop of
 skills, in a new order on every visit, that streams in and out at a seam in the middle of the
 bottom edge, under a badge naming the commit the page was deployed from.
 
