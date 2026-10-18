@@ -1,0 +1,15 @@
+# sandbergcreative.net on Cloudflare: one Worker serving web/ as static files, no code.
+# Deployed by flarepress (github.com/pdxfixit/flarepress): on every push to main by
+# .github/workflows/deploy.yml, or from the Mac with `just push <this folder>`.
+# The Worker name is the one the old redirect to pdxfixit.com used, so the first
+# deploy replaces that Worker on the same Custom Domains instead of clashing with it.
+name = "sandbergcreative-net"
+compatibility_date = "2026-10-11"
+
+routes = [
+  { pattern = "sandbergcreative.net", custom_domain = true },
+  { pattern = "www.sandbergcreative.net", custom_domain = true }
+]
+
+[assets]
+directory = "../web"

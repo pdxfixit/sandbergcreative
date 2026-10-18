@@ -1,0 +1,11 @@
+# Written by flarepress's stamp step at deploy time.
+web/version.json
+
+# wrangler's cache, and the filled copy of site/wrangler.toml a deploy writes (flarepress).
+.wrangler/
+site/.wrangler.deploy.toml
+
+# Agent session worktrees.
+.claude/worktrees/
+
+.DS_Store

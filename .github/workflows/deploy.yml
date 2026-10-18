@@ -1,0 +1,30 @@
+# Every push to main is deployed to https://sandbergcreative.net by the flarepress
+# action: check, gate, stamp, wrangler deploy, verify.
+#
+# Secrets: CLOUDFLARE_API_TOKEN (this zone only: Zone → Workers Routes: Edit, DNS: Edit,
+# Zone: Read; Account → Workers Scripts: Edit) and CLOUDFLARE_ACCOUNT_ID.
+name: deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+# One deploy at a time, in push order; a newer push waits rather than cancels.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # git describe names the version from the tags
+      - uses: pdxfixit/flarepress@v1  # rolling: the owner moves v1 to release
+        with:
+          site: site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
